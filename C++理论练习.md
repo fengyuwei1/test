@@ -1083,3 +1083,31 @@ D.0
 
 - `++a` 会先将 `a` 加 1，然后返回新的值。
 - 表达式中 `++a || ++b && ++c` 的 `||` 优先级低于 `&&`，因此先计算 `++b && ++c` 的结果，再将结果用于 `++a || (...)`。
+
+## 例题23
+
+要求打开文件D:\file.dat，并能够写入数据，正确的语句是（）？
+
+A.ifstream infile("D:\\file.dat", ios::in );
+
+B.ifstream infile("D:\\file.dat", ios::out );
+
+C.ofstream outfile("D:\\file.dat", ios::in );
+
+D.fstream infile("D:\\file.dat", ios::in|ios::out );
+
+解答:
+
+A.选项是，从文件输入到内存中，也就是读，所以实现不了“**写入数据**” 
+
+C.选项最后应该是 ios::out 
+
+选D
+
+### 知识点总结
+
+**`ifstream`**：只读文件流，用于文件读取。常用模式：`ios::in`
+
+**`ofstream`**：只写文件流，用于文件写入。常用模式：`ios::out`
+
+**`fstream`**：读写文件流，用于文件的读写。常用模式组合：`ios::in | ios::out`
