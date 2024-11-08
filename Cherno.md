@@ -4087,3 +4087,104 @@ inline int Example::getValue() {
 
 - **简单函数**：适合那些逻辑简单、代码量少的函数，例如获取某个值的 `getter` 函数，或者执行简单的数学运算。
 - **频繁调用的函数**：对于频繁调用的简单函数，内联可以显著减少调用开销，从而提高性能。
+
+## 86.常函数
+
+在 C++ 中，**常函数（const member function）** 是在成员函数的末尾加上 `const` 关键字的函数。常函数的作用是保护对象的数据成员，使其不会在该函数中被修改。它的主要目的是确保代码的安全性和健壮性，特别是当我们希望某些操作不会改变对象状态时。下面是常函数的详细介绍：
+
+### 1. 常函数的定义
+
+在成员函数的声明或定义的末尾加上 `const` 关键字，就构成了常函数。常函数的语法如下：
+
+```c++
+class ClassName {
+public:
+    ReturnType functionName(Parameters) const;
+};
+```
+
+例如：
+
+```c++
+class MyClass {
+public:
+    int getValue() const; // 常函数
+};
+```
+
+### 2. 常函数的特点
+
+- **不可修改对象的成员变量**：在常函数中，不能修改该对象的任何数据成员（除非该成员被声明为 `mutable`，稍后解释）。
+- **只能调用其他的常成员函数**：在一个常函数中，不能调用非 `const` 的成员函数，因为调用非 `const` 成员函数可能会修改对象的状态。
+
+### 3. 常函数的用途
+
+常函数通常用于提供访问对象数据的安全方式。当我们希望某些操作不会改变对象的状态时，定义它们为常函数。例如，获取对象属性的函数通常定义为常函数，因为获取操作不会对对象进行修改。
+
+### 4.常函数的示例
+
+```c++
+class Rectangle {
+private:
+    int width;
+    int height;
+
+public:
+    Rectangle(int w, int h) : width(w), height(h) {}
+
+    int getWidth() const { // 常函数
+        return width;
+    }
+
+    int getHeight() const { // 常函数
+        return height;
+    }
+
+    int getArea() const { // 常函数
+        return width * height;
+    }
+};
+```
+
+在这个示例中，`getWidth`、`getHeight` 和 `getArea` 都是常函数，因为它们不修改对象的状态，只是读取数据。
+
+### 5. `const` 对象和常函数
+
+常函数的一个重要用途是与 `const` 对象一起使用。例如：
+
+```c++
+const Rectangle rect(10, 20);
+int area = rect.getArea(); // 合法，因为 getArea 是常函数
+```
+
+在上面的代码中，`rect` 是一个 `const` 对象，只有 `const` 函数才能被 `const` 对象调用。因此，如果 `getArea` 不是常函数，编译器会报错。
+
+### 6. `mutable` 关键字
+
+尽管常函数不能修改成员变量，但有时我们可能希望某些特定成员可以在常函数中被修改。例如，记录访问次数的计数器。这种情况下可以使用 `mutable` 关键字声明变量，使其在常函数中可以被修改：
+
+```C++
+class Example {
+private:
+    int value;
+    mutable int accessCount; // 即使在常函数中也可以被修改
+
+public:
+    Example(int v) : value(v), accessCount(0) {}
+
+    int getValue() const {
+        accessCount++; // 合法，因为 accessCount 是 mutable 的
+        return value;
+    }
+
+    int getAccessCount() const {
+        return accessCount;
+    }
+};
+```
+
+### 7. 常函数的好处
+
+- **代码安全性**：使用常函数可以防止意外修改对象的成员，提高代码的安全性。
+- **提高可读性**：让代码更加清晰，因为 `const` 表明了该函数的意图（不会修改对象）。
+- **便于优化**：编译器可以对 `const` 函数进行更多的优化。
