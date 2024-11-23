@@ -520,3 +520,86 @@ int main() {
    - 重载了不同版本的 `operator+`，支持复数与实数之间的混合运算。
 4. **代码可扩展性**：
    - 重载了 `operator<<`，简化了复数的打印操作，增强代码的友好性。
+
+### 6.操作符重载
+
+```c++
+#include <iostream>
+using namespace std;
+
+// 定义 complex 类
+class complex {
+private:
+    double re, im; // 实部和虚部
+
+public:
+    // 构造函数
+    complex(double real = 0, double imag = 0) : re(real), im(imag) {}
+
+    // 获取实部和虚部
+    double real() const { return re; }
+    double imag() const { return im; }
+
+    // 共轭复数函数
+    friend inline complex conj(const complex& x) {
+        return complex(x.real(), -x.imag()); // 实部不变，虚部取反
+    }
+
+    // 重载输出运算符
+    friend ostream& operator<<(ostream& os, const complex& x) {
+        return os << '(' << x.real() << ',' << x.imag() << ')';
+    }
+};
+
+// 测试代码
+int main() {
+    complex c1(2, 1);       // 定义复数 c1，实部为 2，虚部为 1
+
+    // 输出共轭复数
+    cout << conj(c1) << endl;         // 输出 (2,-1)
+
+    // 输出原始复数和其共轭复数
+    cout << c1 << conj(c1) << endl;   // 输出 (2,1)(2,-1)
+
+    return 0;
+}
+```
+
+**目的**
+
+重载 `operator<<` 的目的是让自定义的类支持直接使用 `cout` 等输出流来打印对象的信息。对于复数类，通过重载 `operator<<`，可以以格式化的形式输出复数的实部和虚部，比如 `(real, imag)`。
+
+------
+
+**实现方式**
+
+**1. 函数签名**
+
+```c++
+ostream& operator<<(ostream& os, const complex& x);
+```
+
+- 返回类型：
+
+  ostream&
+
+  - 返回输出流对象的引用，保证可以进行链式操作（如 `cout << obj1 << obj2;`）。
+
+- 参数：
+
+  - `ostream& os`：标准输出流对象（如 `cout`）。
+  - `const complex& x`：要输出的复数对象，使用 `const` 避免修改。
+
+**2. 使用 `friend` 声明**
+
+`operator<<` 是一个非成员函数，因此无法直接访问类的私有或保护成员变量（如 `re` 和 `im`）。为了解决这一问题，需要将其声明为类的友元函数。
+
+在类中添加：
+
+```c++
+friend ostream& operator<<(ostream& os, const complex& x);
+```
+
+**3. 格式化输出**
+
+在实现中，使用 `ostream` 的重载运算符 `<<` 格式化输出复数对象的实部和虚部，具体格式为 `(real, imag)`。
