@@ -3252,3 +3252,70 @@ D选项说法正确，如果一个类有纯虚函数，则该类称为抽象类�
 - 虚函数通过虚函数表（V-Table）实现动态绑定。
 - 每个包含虚函数的类都会有一个虚函数表，存储指向虚函数实现的指针。
 - 运行时，系统根据对象的类型找到对应的虚函数表，进而调用正确的函数。
+
+## 例题65
+
+下列程序编译时有语法错误的语句是（）
+
+```c++
+#include<iostream>
+#include<string>
+ 
+using namespace std; 
+ 
+class Pet {
+     string name;
+public:
+     Pet(string p=" ") { name = p; }
+     string getName() const { return name; }
+     virtual void call() const=0;
+};
+ 
+class Dog : public Pet{
+public:
+    Dog(string n) : Pet(n) {}
+    void call() const { cout<< "##" << " "; }
+};
+ 
+class Cat : public Pet{
+public:
+    Cat(string n) : Pet(n) {}
+    void call() const { cout << "**"; }
+};
+ 
+void f(Pet *p) {
+    p->call();
+}
+int main() { 
+    Pet pet0("#");    //(1)
+    Dog pet1("*");    //(2)
+    Cat pet2("$");    //(3)
+    f(&pet1);         //(4)
+    f(&pet2);         //(5)
+    return 0;
+}
+```
+
+A.(1)
+
+B.(2) (3)
+
+C.(4) (5)
+
+D.(5)
+
+解答：
+类 Pet 包含纯虚函数，是一个虚基类，不能直接实例化，因此注释 (1) 错误。A选项正确。(2) 和 (3)中 Dog 和 Cat 是派生类实例化没有问题。
+
+(4) 和 (5) 可以将派生类对象指针转换为基类指针使用，因此也不会有问题。
+
+### 知识点总结
+
+1. **纯虚函数与抽象类**：
+   - 含有纯虚函数的类是抽象类，不能直接实例化对象。
+   - 子类必须实现所有纯虚函数后，子类对象才可以实例化。
+2. **多态与虚函数**：
+   - 抽象类指针可以指向子类对象，调用的是子类中实现的虚函数。
+3. **常见错误场景**：
+   - **实例化抽象类**：试图直接创建抽象类对象。
+   - **未实现纯虚函数**：子类未实现基类的纯虚函数时，子类仍是抽象类，无法实例化。

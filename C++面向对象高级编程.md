@@ -603,3 +603,51 @@ friend ostream& operator<<(ostream& os, const complex& x);
 **3. 格式化输出**
 
 在实现中，使用 `ostream` 的重载运算符 `<<` 格式化输出复数对象的实部和虚部，具体格式为 `(real, imag)`。
+
+## 4.复数类的设计思路
+
+```c++
+#include <iostream>
+using namespace std;
+#ifndef __COMPLEX__
+#define __COMPLEX__
+class complex
+{
+private:
+	double re, im;
+	friend complex& __doapl(complex*, const complex&);
+public:
+	complex(double r = 0, double i = 0) :re(r), im(i) {}
+	complex& operator += (const complex&);
+	double real()const { return re; }
+	double imag()const { return im; }
+};
+inline complex& __doapl(complex* ths, const complex& r)
+{
+	ths->re += r.re;
+	ths->im += r.im;
+	return *ths;
+}
+inline complex& complex::operator += (const complex& r)
+{
+	return __doapl(this, r);
+}
+inline complex operator+(const complex & x, const complex & y)
+{
+	return complex(x.real() + y.real(), x.imag() + y.imag());
+}
+inline complex operator+(const complex& x, double y)
+{
+	return complex(x.real() + y, x.imag());
+}
+inline complex operator+(double x, const complex& y)
+{
+	return complex(x + y.real(),y.imag());
+}
+inline ostream& operator << (ostream& os, const complex& x)
+{
+	return os << x.real() << x.imag();
+}
+#endif // !__COMPLEX__
+```
+
