@@ -651,3 +651,292 @@ inline ostream& operator << (ostream& os, const complex& x)
 #endif // !__COMPLEX__
 ```
 
+## 5.String类
+
+```c++
+#include <iostream>
+#include <cstring>
+using namespace std;
+#ifndef __STRING__
+#define __STRING__
+class String
+{
+public:
+	String(const char* str = 0);//构造函数
+	String(const String& str);//拷贝构造
+	String& operator=(const String& str);//拷贝赋值
+	~String();
+	char* get_c_str()const { return m_data; }
+private:
+	char* m_data;
+};
+inline String::String(const char* str)
+{
+	if (str)
+	{
+		m_data = new char[strlen(str) + 1];
+		strcpy(m_data, str);
+	}
+	else
+	{
+		m_data = new char[1];
+		*m_data = '\0';
+	}
+}
+inline String::~String()
+{
+	delete[] m_data;
+}
+inline String::String(const String& str)
+{
+	m_data = new char[strlen(str.m_data) + 1];
+	strcpy(m_data, str.m_data);
+}
+inline String& String::operator=(const String& str)
+{
+	if (this == &str)
+	{
+		return *this;
+	}//检测是否为自我赋值
+	delete[] m_data;
+	m_data = new char[strlen(str.m_data)];
+	strcpy(m_data, str.m_data);
+	return *this;
+}
+#endif // !__STRING__
+int main()
+{
+	//String s1();
+	String s2("hello");
+	String s1(s2);
+	s2 = s1;
+	//String* p = new String("hello");
+	//delete p;
+}
+```
+
+注意：在拷贝赋值中，我们要进行自我检测
+
+**问题描述：拷贝赋值操作中的自赋值问题**
+
+1. **自赋值情况**：
+   - 当对象`a`执行`a = a`时，`this`和`rhs`（右值对象）指向同一个内存块。
+   - 此时，`operator=` 的实现若不处理自赋值的特殊情况，会导致未定义行为。
+2. **常见实现中的问题**：
+   - 在`operator=` 函数中，通常会先执行`delete`释放当前对象的内存。
+   - 如果`this`和`rhs`指向同一个内存块，则释放内存后，`rhs`的数据也被释放了。
+   - 接下来尝试从`rhs`读取数据时，会导致未定义行为（Undefined Behavior）。
+
+所以必须进行自我检测
+
+## 6.堆，栈和内存管理
+
+### 1.output函数
+
+```C++
+ostream& operator<<(ostream& os, const String& str)
+{
+	os << str.get_c_str();
+	return os;
+}
+```
+
+### 2.栈和堆
+
+**栈 (Stack)** 是存在于某作用域 (scope) 的一块内存空间 (memory space)。例如，当你调用函数，函数本身会形成一个栈，用来存放它接收的参数以及返回地址。
+
+在函数体 (function body) 内声明的任何变量，其所使用的内存块都来自上述的栈。
+
+**堆 (Heap)**，也称为系统堆 (system heap)，是指由操作系统提供的一块全局内存空间 (global memory space)，程序可以动态分配 (dynamically allocated) 从中获取若干块 (blocks)。
+
+### 3.栈对象的生命期
+
+eg:
+
+```c++
+class Complex{...};
+...
+{
+    Complex c1(1,2);
+}
+```
+
+c1便是所谓的栈对象，其生命周期在作用域 (scope) 结束时终结。这种作用域内的对象，又称为自动对象 (auto object)，因为它会被“自动”清理。
+
+### 4.静态对象的生命期
+
+eg:
+
+```c++
+class Complex{...};
+...
+{
+    static Complex c2(1,2);
+}
+```
+
+c2便是所谓的静态对象，其生命在作用域结束之后仍然存在，直到程序结束
+
+### 5.全局对象的生命期
+
+eg:
+
+```c++
+class Complex{...};
+...
+Complex c3(1,2);
+int main
+{
+    ...
+}
+```
+
+c3便是所谓的全局变量，其生命期在程序结束之后才结束。
+
+### 6.堆对象的生命期
+
+eg1:
+
+```c++
+class Complex { ... };
+...
+
+{
+    Complex* p = new Complex;
+    ...
+    delete p;
+}
+```
+
+**p** 所指的便是堆对象 (heap object)，其生命周期在它被 `delete` 之后结束。
+
+eg2:
+
+```c++
+class Complex { ... };
+...
+
+{
+    Complex* p = new Complex;
+}
+```
+
+以上出现内存泄漏 (memory leak)，因为当作用域结束时，**p** 所指的堆对象 (heap object) 仍然存在，但指针 **p** 的生命周期结束了，作用域之外再也看不到 **p**（也就没有机会调用 `delete p`）.
+
+### 7.new
+
+new:先分配memory，在再调用构造函数
+
+eg:
+
+```c++
+Complex* pc = new Complex(1,2);
+```
+
+`new` 运算符的底层工作可以分为三个步骤：
+
+1. **调用 `operator new` 分配内存**：
+
+   ```c++
+   void* mem = operator new(sizeof(Complex));
+   ```
+
+   - `operator new` 是一个内置函数，用于动态分配指定大小的内存（与 `malloc` 类似）。
+   - `sizeof(Complex)` 表示为类 `Complex` 分配足够大小的内存。
+
+2. **类型转换，将分配的内存转换为对象指针**：
+
+   ```c++
+   pc = static_cast<Complex*>(mem);
+   ```
+
+   - 使用 `static_cast` 将 `void*` 指针转换为 `Complex*`，从而为接下来的操作提供正确的类型。
+
+3. **调用构造函数初始化对象**：
+
+   ```c++
+   pc->Complex::Complex(1, 2);
+   ```
+
+   - 在分配的内存上显式调用类的构造函数，完成对象的初始化。
+   - 也就是`Complex::Complex(pc,1,2);`
+
+### 8.delete
+
+delete:先调用dtor，再释放memory
+
+eg:
+
+```c++
+Complex* pc = new Complex(1,2);
+...
+delete pc;
+```
+
+编译器转化为：
+
+```c++
+Complex::~Complex(pc);
+operator delete(pc);//其内部调用free(ps)
+```
+
+### 9.动态分配所得的内存块
+
+**Complex Object**
+
+| 字段           | 值                 | 描述                         |
+| -------------- | ------------------ | ---------------------------- |
+| Header         | `00000011`         | 内存块的头部                 |
+| Complex Object | `8h`               | 对象占用的实际大小           |
+| Padding (0xfd) | 4 bytes            | 填充字节                     |
+| Padding (pad)  | 4 bytes            | 填充字节                     |
+| **总计**       | `8 + (4 * 2) = 16` | 计算出的对齐后的总内存块大小 |
+
+------
+
+**String Object**
+
+| 字段          | 值                 | 描述                         |
+| ------------- | ------------------ | ---------------------------- |
+| Header        | `00000011`         | 内存块的头部                 |
+| String Object | `4h`               | 对象占用的实际大小           |
+| Padding (pad) | 4 bytes            | 填充字节                     |
+| **总计**      | `4 + (4 * 2) = 16` | 计算出的对齐后的总内存块大小 |
+
+------
+
+**复杂内存块**
+
+| 字段           | 值                                    | 描述                   |
+| -------------- | ------------------------------------- | ---------------------- |
+| Complex Object | `8h`                                  | Complex 对象占用的大小 |
+| Padding (0xfd) | 32 bytes                              | 填充字节               |
+| Padding (pad)  | 4 bytes                               | 填充字节               |
+| String Object  | `4h`                                  | String 对象占用的大小  |
+| **总计**       | `8 + (32 + 4) + (4 * 2) = 52` -> `64` | 对齐后的总内存块大小   |
+
+### 10.动态分配所得的数组 (Array)
+
+**Complex 数组 `Complex* p = new Complex[3];`**
+
+| 字段                  | 值                                            | 描述                                   |
+| --------------------- | --------------------------------------------- | -------------------------------------- |
+| Header                | `51h`                                         | 调试器头部 (Debugger Header, 32 bytes) |
+| 数组长度 (Array Size) | 3                                             | 表示分配的数组长度                     |
+| 数据部分 (Data)       | 每个 Complex 占用 `8 bytes`，共 `3` 个        |                                        |
+| Padding               | `4 * 2 bytes`                                 | 对齐填充                               |
+| **总计**              | `(8 * 3) + (4 * 2) + 4 = 36 -> 向上对齐为 48` |                                        |
+| **最终总计**          | `8 * 3 + 32 + 4 + (4 * 2) = 80`               |                                        |
+
+------
+
+**String 数组 `String* p = new String[3];`**
+
+| 字段                  | 值                                            | 描述                                   |
+| --------------------- | --------------------------------------------- | -------------------------------------- |
+| Header                | `41h`                                         | 调试器头部 (Debugger Header, 32 bytes) |
+| 数组长度 (Array Size) | 3                                             | 表示分配的数组长度                     |
+| 数据部分 (Data)       | 每个 String 占用 `4 bytes`，共 `3` 个         |                                        |
+| Padding               | `4 * 2 bytes`                                 | 对齐填充                               |
+| **总计**              | `(4 * 3) + (4 * 2) + 4 = 24 -> 向上对齐为 32` |                                        |
+| **最终总计**          | `4 * 3 + 32 + 4 + (4 * 2) = 64`               |                                        |
