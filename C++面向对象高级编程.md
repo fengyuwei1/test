@@ -996,3 +996,499 @@ operator delete(pc);//其内部调用free(ps)
 
 - 只有在**非静态成员函数**中才可用。
 - 指向调用该函数的对象，便于访问其非静态成员。
+
+ **使用static函数的方式有：**
+
+1.通过对象调用：a.set_rate(7.0)
+
+2.通过加上类名的函数调用:Acount::set_rate(5.0)
+
+### 2.把构造函数放在private区内
+
+```c++
+class A {
+public:
+    static A& getInstance();
+    void setup() { ... }
+private:
+    A();
+    A(const A& rhs);
+    ...
+};
+
+A& A::getInstance() {
+    static A a;
+    return a;
+}
+
+// 使用方式
+A::getInstance().setup();
+```
+
+这段代码实现了 **Meyers Singleton** 模式，这是 C++ 中一种优雅的单例模式实现。
+
+1. **单例模式简介**
+
+单例模式是一种设计模式，其目标是保证某个类在整个程序运行过程中只有一个实例存在，同时提供一个全局访问点来访问这个实例。
+
+------
+
+2. **代码解读**
+
+- **`static A& getInstance()`**
+  - 这是一个静态成员函数，返回类 `A` 的唯一实例的引用。
+  - 它的作用是确保只有一个实例被创建，同时提供对该实例的访问。
+- **`static A a;`**
+  - 在 `getInstance()` 函数中，使用了静态局部变量 `a`。C++ 标准规定，静态局部变量只会在程序运行期间初始化一次，这保证了 `a` 是全局唯一的。
+  - 静态局部变量的生命周期从程序开始到结束，因此可以确保 `a` 始终有效。
+- **`A::getInstance().setup();`**
+  - 调用方式，通过单例对象调用其方法（`setup()`）。
+  - 不需要直接创建对象，而是通过 `getInstance()` 获取全局唯一实例。
+
+------
+
+3. **优点**
+
+- 线程安全性
+  - 从 C++11 开始，静态局部变量的初始化是线程安全的，这避免了传统单例实现中的锁机制。
+- 延迟初始化
+  - 实例仅在第一次调用 `getInstance()` 时创建，节约资源。
+
+------
+
+4. **限制**
+
+- 构造函数和拷贝构造函数私有化
+  - 构造函数 `A()` 和拷贝构造函数 `A(const A& rhs)` 被设为 `private`，以防止外部直接创建或拷贝 `A` 的实例。
+
+------
+
+5. **适用场景**
+
+Meyers Singleton 模式适用于需要全局唯一对象且延迟初始化的场景，例如：
+
+- 配置管理器
+- 日志管理器
+- 数据库连接池
+
+### 3.cout
+
+```c++
+class ostream : virtual public ios
+{
+public:
+    ostream& operator<<(char c);
+    ostream& operator<<(unsigned char c) { return (*this) << (char)c; }
+    ostream& operator<<(signed char c) { return (*this) << (char)c; }
+    ostream& operator<<(const char *s);
+    ostream& operator<<(const unsigned char *s) 
+    { 
+        return (*this) << (const char*)s; 
+    }
+    ostream& operator<<(const signed char *s) 
+    { 
+        return (*this) << (const char*)s; 
+    }
+    ostream& operator<<(const void *p);
+    ostream& operator<<(int n);
+    ostream& operator<<(unsigned int n);
+    ostream& operator<<(long n);
+    ostream& operator<<(unsigned long n);
+    ...
+};
+
+class _IO_ostream_withassign : public ostream 
+{
+    ...
+};
+
+extern _IO_ostream_withassign cout;
+```
+
+这段代码展示了 C++ 标准库中 `ostream` 类的部分实现细节，以及 `<<` 运算符的重载。它主要用于输出流操作，例如通过 `std::cout` 打印各种类型的数据。
+
+------
+
+1. **`ostream` 类**
+
+`ostream` 是 C++ 标准库中的一个输出流类，用于格式化输出。它继承自 `ios`（输入输出流的基类），是标准输出流的核心部分。
+
+------
+
+2. **运算符重载 `operator<<`**
+
+`ostream` 类通过重载 `<<` 运算符支持输出各种数据类型。
+
+- **`ostream& operator<<(char c);`**
+  - 用于输出单个字符。
+- **`ostream& operator<<(unsigned char c)` 和 `ostream& operator<<(signed char c)`**
+  - 用于输出无符号和有符号字符。
+  - 它们通过强制类型转换为 `char`，然后调用 `ostream& operator<<(char c)` 方法完成输出。
+- **`ostream& operator<<(const char \*s);`**
+  - 用于输出 C 风格的字符串（以 `'\0'` 结尾的字符数组）。
+- **`ostream& operator<<(const unsigned char \*s)` 和 `ostream& operator<<(const signed char \*s)`**
+  - 用于输出指向无符号或有符号字符的字符串指针。
+  - 它们将字符串指针转换为 `const char*`，然后调用 `ostream& operator<<(const char *s)`。
+- **`ostream& operator<<(const void \*p);`**
+  - 用于输出指针类型。通常将指针的值打印为地址（十六进制格式）。
+- **`ostream& operator<<(int n);`、`ostream& operator<<(unsigned int n);`**
+  - 用于输出整型数据。
+  - 类似的，还有对 `long` 和 `unsigned long` 类型的支持。
+
+------
+
+3. **`_IO_ostream_withassign` 类**
+
+- `_IO_ostream_withassign` 是 `ostream` 的派生类，可能在内部用于管理与 `ostream` 相关的特定实现。
+
+------
+
+4. **`cout`**
+
+- `cout` 是一个全局对象，通常用于标准输出流。
+- 通过 `extern _IO_ostream_withassign cout;` 声明，可以直接使用 `std::cout` 对象。
+
+### 4.class template 类模板
+
+```c++
+template<typename T>
+class complex
+{
+public:
+    complex(T r = 0, T i = 0)
+        : re(r), im(i)
+    { }
+
+    complex& operator += (const complex&);
+    
+    T real() const { return re; }
+    T imag() const { return im; }
+
+private:
+    T re, im;
+
+    friend complex& __doapl (complex*, const complex&);
+};
+
+// 使用示例
+complex<double> c1(2.5, 1.5);
+complex<int> c2(2, 6);
+```
+
+这段代码展示了一个模板类 `complex` 的实现，它可以表示并操作任意类型的复数（如 `int`、`float`、`double`）。
+
+------
+
+1. **模板类概念**
+
+模板类允许开发者定义一个通用的类，而无需为每种数据类型（如 `int` 或 `double`）重复编写代码。
+
+```cpp
+template<typename T>
+```
+
+- `T` 是模板参数，在实例化类时用具体的类型替换（例如 `int`、`double`）。
+- 该模板类 `complex` 的所有成员函数和数据成员都基于模板参数类型 `T`。
+
+------
+
+2. **构造函数**
+
+```cpp
+complex(T r = 0, T i = 0)
+    : re(r), im(i)
+{ }
+```
+
+- 这是一个默认构造函数，使用成员初始化列表初始化复数的实部 `re` 和虚部 `im`。
+- 默认参数 `T r = 0` 和 `T i = 0` 表示如果用户没有提供值，实部和虚部默认为 `0`。
+
+------
+
+3. **成员函数**
+
+- **`real()` 和 `imag()`**
+
+  ```cpp
+  T real() const { return re; }
+  T imag() const { return im; }
+  ```
+
+  - `real()` 返回复数的实部，`imag()` 返回虚部。
+  - 它们被声明为 `const`，表示不会修改类的数据成员。
+
+- **`operator +=`**
+
+  ```cpp
+  complex& operator += (const complex&);
+  ```
+
+  - 这是 `+=` 运算符的重载，允许对复数进行加法操作。
+
+  - 例如：
+
+    ```cpp
+    complex<double> a(1.0, 2.0), b(0.5, 0.5);
+    a += b; // 实部和虚部分别相加
+    ```
+
+------
+
+4. **私有数据成员**
+
+```cpp
+T re, im;
+```
+
+- `re` 和 `im` 分别存储复数的实部和虚部。
+- 类型 `T` 由模板参数决定。
+
+------
+
+5. **友元函数**
+
+```cpp
+friend complex& __doapl(complex*, const complex&);
+```
+
+- 友元函数 `__doapl` 声明为 `complex` 的友元，允许它直接访问 `complex` 的私有成员。
+- 该函数的具体实现未展示，但它通常用于实现与 `+=` 运算符相关的逻辑。
+
+------
+
+6. **使用示例**
+
+```cpp
+complex<double> c1(2.5, 1.5);
+complex<int> c2(2, 6);
+```
+
+- `complex<double>`：实例化一个以 double为类型参数的复数类。
+  - 实部为 `2.5`，虚部为 `1.5`。
+- `complex<int>`：实例化一个以 int为类型参数的复数类。
+  - 实部为 `2`，虚部为 `6`。
+
+### 5.函数模板
+
+**模板函数**
+
+```cpp
+template <class T>
+inline
+const T& min(const T& a, const T& b)
+{
+    return b < a ? b : a;
+}
+```
+
+**类 `stone`**
+
+```cpp
+class stone
+{
+public:
+    stone(int w, int h, int we)
+        : _w(w), _h(h), _weight(we)
+    {
+    }
+
+    bool operator<(const stone& rhs) const
+    {
+        return _weight < rhs._weight;
+    }
+
+private:
+    int _w, _h, _weight;
+};
+```
+
+**使用代码**
+
+```cpp
+stone r1(2, 3, 10), r2(3, 3, 8), r3;
+r3 = min(r1, r2);
+```
+
+1. **模板函数 `min`**
+
+```cpp
+template <class T>
+inline
+const T& min(const T& a, const T& b)
+{
+    return b < a ? b : a;
+}
+```
+
+- 这是一个模板函数，支持比较任意类型 `T` 的两个对象 `a` 和 `b`，返回较小的一个。
+- 模板参数：
+  - `T` 是模板参数，它的具体类型会在调用时由编译器通过 **类型推导 (argument deduction)** 决定。
+- 函数逻辑：
+  - 使用 `b < a` 进行比较，若 `b` 小于 `a`，则返回 `b`；否则返回 `a`。
+  - 返回的是对象的引用，以避免拷贝对象，提高效率。
+
+------
+
+2. **类 `stone`**
+
+- `stone` 类表示一个石头对象，具有宽度、高度和重量三个属性。
+
+**构造函数**
+
+```cpp
+stone(int w, int h, int we)
+    : _w(w), _h(h), _weight(we)
+{
+}
+```
+
+- 构造函数初始化了石头的宽度 `_w`、高度 `_h` 和重量 `_weight`。
+- 使用 **初始化列表** 提高性能。
+
+**运算符 `<` 的重载**
+
+```cpp
+bool operator<(const stone& rhs) const
+{
+    return _weight < rhs._weight;
+}
+```
+
+- 重载了小于运算符 `<`，用于比较两个 `stone` 对象。
+- 比较的依据是重量 `_weight`。
+- `const` 修饰符表示该函数不会修改类的成员变量。
+
+------
+
+3. **使用 `min` 函数**
+
+```cpp
+stone r1(2, 3, 10), r2(3, 3, 8), r3;
+r3 = min(r1, r2);
+```
+
+- **对象初始化**
+  - `r1` 的宽度、高度和重量分别是 `(2, 3, 10)`。
+  - `r2` 的宽度、高度和重量分别是 `(3, 3, 8)`。
+- **调用模板函数 `min`**
+  - 函数 `min` 的模板参数 `T` 由编译器自动推导为 `stone` 类型。
+  - 比较 r1和 r2的逻辑：
+    - `r2._weight` = 8，`r1._weight` = 10。
+    - 调用 `stone::operator<`，发现 `r2` 小于 `r1`。
+  - 返回较小的对象 `r2`。
+  - `r3` 被赋值为 `r2`。
+
+### 6.namespace
+
+```c++
+namespace std
+{
+    ...
+}
+```
+
+1. **命名空间简介**
+
+C++ 的标准库中大多数功能（如 `cin`、`cout` 等）都位于命名空间 `std` 中。为了避免名字冲突，C++ 使用命名空间来组织代码。
+
+常见的命名空间使用方式包括：
+
+1. `using namespace` 指令（`using directive`）。
+2. `using` 声明（`using declaration`）。
+3. 完全限定名（直接使用 `std::` 前缀）。
+
+------
+
+2. **方式一：Using Directive（使用指令）**
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    cin >> ...;
+    cout << ...;
+    return 0;
+}
+```
+
+特点：
+
+1. `using namespace std;` 使得命名空间 `std` 中的所有标识符（如 `cin`、`cout` 等）在当前作用域可直接使用，无需加 `std::` 前缀。
+2. 优点：
+   - 简洁，适合小型程序或快速实现代码。
+3. 缺点：
+   - **潜在风险**：如果多个命名空间中有同名的标识符（如 `std::count` 和另一个库中的 `count`），可能导致名称冲突。
+   - 在大型工程中，`using namespace std;` 可能引入不必要的标识符，增加命名冲突的风险。
+
+建议：
+
+不推荐在大型项目或头文件中使用 `using namespace std;`，以免引发命名冲突。
+
+------
+
+3. **方式二：Using Declaration（使用声明）**
+
+```cpp
+#include <iostream>
+using std::cout;
+
+int main()
+{
+    std::cin >> ...;
+    cout << ...;
+    return 0;
+}
+```
+
+特点：
+
+1. 只将命名空间 `std` 中的某个标识符（如 `cout`）引入当前作用域，而不是整个命名空间。
+2. 优点：
+   - 只引入需要的标识符，避免了命名冲突的风险。
+   - 在较复杂的代码中，可以清楚地看到哪些标识符来自 `std`。
+3. 缺点：
+   - 对于需要频繁使用的标识符（如 `cin`、`cout` 等），可能稍显繁琐。
+
+建议：
+
+这种方式适合中大型项目中，明确只需要使用某些特定标识符时。
+
+------
+
+4. **方式三：完全限定名**
+
+```cpp
+#include <iostream>
+
+int main()
+{
+    std::cin >> ...;
+    std::cout << ...;
+    return 0;
+}
+```
+
+特点：
+
+1. 每次使用标识符时都要加上 `std::` 前缀。
+2. 优点：
+   - 完全避免了命名冲突。
+   - 更具可读性，明确标识符的来源。
+3. 缺点：
+   - 如果标识符使用频繁，代码会变得冗长。
+
+建议：
+
+适合大型项目和团队开发时，明确标识符来源是 `std`，提高代码的可维护性和可读性。
+
+------
+
+**总结：选择合适的方式**
+
+| 方式                  | 使用场景                           | 优点                       | 缺点                               |
+| --------------------- | ---------------------------------- | -------------------------- | ---------------------------------- |
+| **Using Directive**   | 小型项目、快速测试代码             | 简洁方便，减少代码输入     | 易引发命名冲突，不适合复杂项目     |
+| **Using Declaration** | 中型项目，使用部分 `std` 标识符    | 避免命名冲突，代码更安全   | 对于多个标识符需多次声明，稍显繁琐 |
+| **完全限定名**        | 大型项目、团队开发，明确标识符来源 | 完全避免命名冲突，可读性高 | 使用频繁时代码较冗长               |
