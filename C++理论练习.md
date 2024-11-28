@@ -3617,3 +3617,206 @@ D.出现错误
 4. **指针越界：**
    - 在该代码中，虽然 `p` 指向了数组末尾以外的地址，但操作 `*(p - 1)` 仍然在数组范围内，因此是安全的。
    - 如果访问超出范围的内存，可能引发未定义行为。
+
+## 例题72
+
+下面的代码输出是（）
+
+```c++
+int main() {
+    union Data {
+        struct {
+            int x;
+            int y;
+        } s;
+        int x;
+        int y;
+    } d;
+    d.x = 1;
+    d.y = 2;
+    d.s.x = d.x * d.x;
+    d.s.y = d.y + d.y;
+    printf("%d %d\n", d.s.x, d.s.y);
+    return 0;
+}
+```
+
+A.1 4
+
+B.4 4
+
+C.1 2
+
+D.4 8
+
+解答：
+
+union中的所有成员相对于基地址的偏移量都为零。d.x,d.y和d.s.x的起始地址
+
+都相同,共享内存空间，给任意一个变量赋值，其他两个变量也会赋相同的值。
+
+所以答案选D
+
+### 知识点总结
+
+1. **联合体（`union`）**
+
+- 联合体中的所有成员共用同一块内存空间，意味着它们的内存地址是重叠的。
+- 联合体的大小由最大成员的大小决定，因此即使联合体有多个成员，实际的内存空间只会分配最大的成员所需的空间。
+- 每次只能有一个成员被赋值和访问。赋值一个成员的值会覆盖其他成员的内容，因为它们共享同一块内存。
+
+2. **结构体（`struct`）和联合体内嵌结构体**
+
+- 在这个例子中，联合体 `Data` 包含了一个结构体 `s`。结构体内有两个成员 `x` 和 `y`，而结构体本身作为联合体的成员。
+- 访问结构体成员时会修改联合体内存的某一部分，而其他非结构体成员的值也会受到影响（因为它们共享相同的内存区域）。
+
+3. **内存共享**
+
+- 联合体的成员共享内存，这意味着修改联合体的某个成员的值，可能会改变其他成员的值。
+- 在代码中，`d.x = 1` 和 `d.y = 2` 修改了联合体的内存空间，之后通过 `d.s.x` 和 `d.s.y` 访问内存时，结构体成员的值反映了这些变化。
+
+## 例题73
+
+What’s the output of below code on a 64-bit system?（单选）
+
+```c++
+#include <iostream>
+using namespace std;
+
+struct data {
+int type;
+
+struct {
+    unsigned int a:1;
+    unsigned int b:1;
+    unsigned int c:4;
+    unsigned int d:4;
+    unsigned int e:4;
+    unsigned int f:4;
+    unsigned int g:4;
+    unsigned int h:8;
+    unsigned int i:8;
+} flags;
+
+struct {
+    unsigned int a:1;
+    unsigned int b:1;
+} flagsEx;
+};
+
+int main() {
+    data temp;
+    int a = sizeof(data);
+    int b = sizeof(temp);
+
+    data *pTemp = new data();
+    int c = sizeof(pTemp);
+    delete pTemp;
+    pTemp = NULL;
+
+    cout << a << ", " << b << ", " << c << endl;
+
+    return 0;
+}
+```
+
+A.16, 16, 8
+
+B.48, 48, 8
+
+C.48, 16, 8
+
+D.16, 4, 4
+
+解答：
+
+unsigned int a:1;不是给a赋初值，在内存中存取数据的最小单位一般是字节，但有时存储一个数据不必用一个字节。这是一种位域的结构体,这个结构里a占用的是一个字节中的1位,b也占用1位.所以这里的a和b的取值只能是0和1。因为它们都是用1位来表示的。使用位域可以节省很多的内存空间。  
+
+  并且存储器会按照其定义类型预留存储bit位空间，即  
+
+  struct {  
+
+​      unsigned int a:1;
+​     unsigned int b:1;
+​     unsigned int c:4;
+​     unsigned int d:4;
+​     unsigned int e:4;
+​     unsigned int f:4;
+​     unsigned int g:4;
+​     unsigned int h:8;
+​     unsigned int i:8;
+   } flags;
+ 共占用38个bit，但一个unsigned int占四个字节共32个bit，多出的6个bit占四个字节，多出来的是预留空间； 
+
+  同理  struct {
+     unsigned int a:1;
+     unsigned int b:1;
+   } flagsEx;  
+
+  也占四个字节； 
+
+  sizeof针对类型，a,b输出的都是struct data 的大小，所以a=b=4+8+4=16； 
+
+  c输出的是指针的大小，所以c=64/8=8; 
+
+  关于预留空间的补充：预留空间是针对最大bit类型的，如 
+
+  仅改变 flagsEx 
+
+  struct {
+     unsigned char a:1;
+     unsigned int b:1;
+   } flagsEx;  
+
+   flagsEx任然占用4个字节；a,b,c结果不变
+ 
+
+  仅改变 flagsEx 
+
+  struct {
+     unsigned long a:1;
+     unsigned int b:1;
+   } flagsEx;
+
+则flagsEx占用8个字节；但会改变flags和 int type的最小占用单位变为8个字节， 结果a=b=24；但是sizeof(type)任然等于4; 
+
+仅将int type 改为long type结果结果a=b=24；但是sizeof(flagsEx)任然等于4;  也就是说flagsEx 、flags、type中最大类型决定了data最小存储单位，存储位数不够则增加一个最小存储单位；
+
+所以答案选A
+
+### 知识点总结
+
+1. **位字段（Bit-fields）**
+
+- 位字段是结构体中的成员，其占用的空间是特定的位数，而不是完整的字节。
+- 在结构体中使用位字段可以节省内存空间，尤其是在存储布尔值或小范围整数时。
+- 位字段的大小通常是由声明时指定的位数决定的，例如 `unsigned int a: 1` 表示 `a` 仅占用 1 位。
+- 位字段总占用空间可能会因内存对齐而增加，通常会向上舍入到字节边界。
+
+2. **内存对齐和填充**
+
+- 结构体在内存中的存储方式通常会遵循内存对齐规则，即数据成员的地址应当是它们类型大小的倍数（如 4 字节对齐或 8 字节对齐）。
+- 为了满足对齐要求，编译器可能会在结构体中插入填充字节。
+- 在这段代码中，结构体 `data` 的实际内存占用被填充到 16 字节，即使其成员的总位数不满 16 字节。
+
+3. **结构体大小计算**
+
+- 结构体的大小是由其中的所有成员的大小、内存对齐要求以及填充字节共同决定的。
+- 在本例中，`data` 结构体的成员包括一个 4 字节的 `int` 类型，6 字节的 `flags` 位字段结构体，和 1 字节的 `flagsEx` 位字段结构体。由于内存对齐，最终结构体的大小被填充为 16 字节。
+- 位字段的总大小加起来可能不会正好等于结构体的实际大小，因此内存对齐和填充会使结构体的实际大小有所增加。
+
+4. **指针大小**
+
+- 在 64 位系统上，指针的大小通常是 8 字节。这是因为指针需要存储一个 64 位地址，即 8 字节。
+- 因此，在 `pTemp` 变量的情况下，`sizeof(pTemp)` 将是 8 字节。
+
+5. **动态内存分配**
+
+- `pTemp` 是通过 `new` 操作符动态分配内存的，它是一个指向 `data` 结构体的指针。
+- `sizeof(pTemp)` 计算的是指针本身的大小，而不是它指向的对象的大小。
+- `delete pTemp` 用于释放动态分配的内存，`pTemp = NULL` 将指针设置为 `NULL`，避免悬挂指针。
+
+6. **`sizeof` 操作符**
+
+- `sizeof` 是一个编译时操作符，用于获取数据类型或变量的内存占用大小（单位为字节）。
+- `sizeof(data)` 返回 `data` 结构体的总大小，`sizeof(temp)` 返回 `temp` 变量的大小，`sizeof(pTemp)` 返回指针 `pTemp` 的大小。
