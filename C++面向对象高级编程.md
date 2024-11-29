@@ -1492,3 +1492,136 @@ int main()
 | **Using Directive**   | 小型项目、快速测试代码             | 简洁方便，减少代码输入     | 易引发命名冲突，不适合复杂项目     |
 | **Using Declaration** | 中型项目，使用部分 `std` 标识符    | 避免命名冲突，代码更安全   | 对于多个标识符需多次声明，稍显繁琐 |
 | **完全限定名**        | 大型项目、团队开发，明确标识符来源 | 完全避免命名冲突，可读性高 | 使用频繁时代码较冗长               |
+
+## 8.组合与继承
+
+### 1.复合
+
+表示类中有其他东西，意为has-a
+
+例：**适配器模式**
+
+- 适配器模式用于将一个类的接口转换成客户希望的另一个接口。它使得原本由于接口不兼容而不能一起工作的类可以协同工作。
+
+```c++
+template <class T>
+class queue {
+protected:
+    deque<T> c; // 底层容器
+public:
+    // 以下完全利用 c 的操作函数完成
+    bool empty() const { return c.empty(); }
+    size_type size() const { return c.size(); }
+    reference front() { return c.front(); }
+    reference back() { return c.back(); }
+    //
+    void push(const value_type& x) { c.push_back(x); }
+    void pop() { c.pop_front(); }
+};
+```
+
+eg:queue->deque
+
+**Composition（复合）关系下的构造和析构**
+
+Container(主)->Component(子)
+
+**构造由内而外** Container 的构造函数首先调用 Component 的 default 构造函数(默认构造函数)，然后才执行自己。
+
+```cpp
+Container::Container(...): Component() { ... };
+```
+
+**析构由外而内** Container 的析构函数首先执行自己，然后才调用 Component 的析构函数。
+
+```cpp
+Container::~Container(...) { ... ~Component() };
+```
+
+### 2.委托
+
+委托（Delegation）是一种设计模式，它允许一个对象（委托者）将其任务或行为的一部分转交给另一个对象（被委托者）。
+
+`String.hpp`
+
+```c++
+class StringRep;
+class String {
+public:
+    String();
+    String(const char* s);
+    String(const String& s);
+    String& operator=(const String& s);
+    ~String();
+    // ...
+private:
+    StringRep* rep; // pimpl
+};
+```
+
+`string.cpp`
+
+```c++
+#include "String.hpp"
+namespace {
+class StringRep {
+    friend class String;
+    StringRep(const char* s);
+    ~StringRep();
+    int count;
+    char* rep;
+};
+}
+String::String() { ... }
+// ...
+```
+
+**知识点：**
+
+1. **Pimpl（Pointer to Implementation）模式**:
+   - 这是一种C++中常用的技术，用于隐藏实现细节，减少编译依赖，提高编译速度，并且使得类的定义更加清晰。
+2. **委托（Delegation）**:
+   - 在这个例子中，`String` 类委托其数据管理和一些操作给 `StringRep` 类。这种委托是通过引用实现的。
+
+### 3.继承
+
+表示is-a
+
+```c++
+struct _List_node_base {
+    _List_node_base* M_next;
+    _List_node_base* M_prev;
+};
+
+template<typename _Tp>
+struct _List_node : public _List_node_base {
+    _Tp M_data;
+};
+```
+
+**知识点：**
+
+1. **继承（Inheritance）**:
+   - 继承是一种面向对象编程的概念，它允许一个类（子类或派生类）继承另一个类（基类或父类）的属性和方法。在这段代码中，`_List_node` 继承自 `_List_node_base`。
+
+**继承关系下的构造和析构**
+
+**Base part**（基类部分）-> **Derived object**（派生对象） 
+
+**构造由内而外**
+ 派生类的构造函数首先调用基类的默认构造函数，然后才执行自己。
+
+```cpp
+Derived::Derived(...) : Base() { ... };
+```
+
+**析构由外而内**
+ 派生类的析构函数首先执行自己，然后才调用基类的析构函数。
+
+```cpp
+Derived::~Derived(...) { ... ~Base() };
+```
+
+*基类的析构函数必须是虚拟的，否则会出现未定义行为*
+
+基类的析构函数应该是虚拟的，以确保当通过基类指针删除派生类对象时，能够正确调用派生类的析构函数，避免资源泄漏。
