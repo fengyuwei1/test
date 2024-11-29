@@ -1625,3 +1625,100 @@ Derived::~Derived(...) { ... ~Base() };
 *基类的析构函数必须是虚拟的，否则会出现未定义行为*
 
 基类的析构函数应该是虚拟的，以确保当通过基类指针删除派生类对象时，能够正确调用派生类的析构函数，避免资源泄漏。
+
+## 9.多态与虚函数
+
+```c++
+class Shape {
+public:
+    virtual void draw() const = 0; // 纯虚函数
+    virtual void error(const std::string& msg); // 虚函数
+    int objectID() const; // 非虚函数
+};
+
+class Rectangle: public Shape { ... };
+class Ellipse: public Shape { ... };
+```
+
+- 非虚函数：你不希望派生类（derived class）重新定义（override，覆盖）它。
+- 虚函数：你希望派生类重新定义（override，覆盖）它，且你对它已有默认定义。
+- 纯虚函数：你希望派生类一定要重新定义（override，覆盖）它，你对它没有默认定义。
+
+### 1.模板方法(Template Method)
+
+**应用框架（Application framework）**
+
+```c++
+class CDocument {
+public:
+    void OnFileOpen() {
+        // ...
+        Serialize();
+        // ...
+    }
+    virtual void Serialize() { ... }
+};
+```
+
+**应用程序（Application）**
+
+```cpp
+class CMyDoc : public CDocument {
+public:
+    virtual void Serialize() override { ... }
+};
+
+int main() {
+    CMyDoc myDoc;
+    // ...
+    myDoc.OnFileOpen();
+}
+```
+
+- `CDocument` 类有一个 `OnFileOpen` 方法，它是一个模板方法，定义了算法的骨架。
+- `Serialize` 方法是一个虚方法，它在 `CDocument` 类中有一个默认的实现，但是可以在派生类中被重写。
+- `CMyDoc` 类继承自 `CDocument` 类，并重写了 `Serialize` 方法，提供了特定的实现。
+- 在 `main` 函数中，创建了一个 `CMyDoc` 对象，并调用了 `OnFileOpen` 方法，这将触发 `Serialize` 方法的执行，由于 `CMyDoc` 重写了 `Serialize`，所以调用的是 `CMyDoc` 的 `Serialize` 方法。
+
+### 2.对组合和继承的总结
+
+**总结：**
+
+1. **继承** 允许一个类（派生类）继承另一个类（基类）的属性和方法。这创建了类之间的层次结构。
+2. **组合** 是一种关系，其中一个类（组合类）包含另一个类（组件类）的实例作为其成员。这表示“has-a”关系。
+3. 在构造派生对象时，基类的构造函数总是先于派生类的构造函数被调用。如果派生类中包含组合的对象，那么这些对象的构造函数也会在派生类的构造函数中被调用。
+4. 析构过程与构造过程相反，析构函数的调用顺序是从组合的对象开始，然后是派生类，最后是基类。
+
+### 3.委托+继承
+
+观察者模式（Observer Pattern）的实现，结合了委托（Delegation）和继承（Inheritance）的概念。观察者模式是一种行为设计模式，它定义了一种一对多的依赖关系，让多个观察者对象同时监听某一个主题对象。当主题对象发生变化时，它的所有依赖者（观察者）都会收到通知并自动更新。
+
+```c++
+class Subject {
+    int m_value;
+    vector<Observer*> m_views;
+public:
+    void attach(Observer* obs) {
+        m_views.push_back(obs);
+    }
+    void set_val(int value) {
+        m_value = value;
+        notify();
+    }
+    void notify() {
+        for (int i = 0; i < m_views.size(); ++i)
+            m_views[i]->update(this, m_value);
+    }
+};
+
+class Observer {
+public:
+    virtual void update(Subject* sub, int value) = 0;
+};
+```
+
+**总结：**
+
+- **Subject** 类负责维护观察者列表，并在状态改变时通知它们。
+- **Observer** 类是一个抽象类，定义了 `update()` 方法，具体的观察者类需要继承自 `Observer` 并实现 `update()` 方法。
+- 这种模式允许对象在状态改变时，自动通知依赖它的对象，从而实现松耦合和高内聚的设计。
