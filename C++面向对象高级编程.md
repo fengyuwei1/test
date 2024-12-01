@@ -1722,3 +1722,135 @@ public:
 - **Subject** 类负责维护观察者列表，并在状态改变时通知它们。
 - **Observer** 类是一个抽象类，定义了 `update()` 方法，具体的观察者类需要继承自 `Observer` 并实现 `update()` 方法。
 - 这种模式允许对象在状态改变时，自动通知依赖它的对象，从而实现松耦合和高内聚的设计。
+
+## 10.委托相关设计
+
+### 1.组合模式
+
+```c++
+class Component {
+    int value;
+public:
+    Component(int val) { value = val; }
+    virtual void add(Component* c) { }
+};
+
+class Composite : public Component {
+    vector<Component*> c;
+public:
+    Composite(int val) : Component(val) { }
+    void add(Component* elem) {
+        c.push_back(elem);
+    }
+    // 其他可能的成员函数...
+};
+
+class Primitive : public Component {
+public:
+    Primitive(int val) : Component(val) { }
+    // 其他可能的成员函数...
+};
+```
+
+1. **委托（Delegation）**：`Composite` 类通过包含一个 `Component` 对象的向量来实现组合模式，它将 `add` 方法的调用委托给其子组件。
+2. **组合模式（Composite Pattern）**：允许你将对象组合成树形结构来表示“部分-整体”的层次结构。`Composite` 类和 `Primitive` 类共同构成一个树形结构，其中 `Composite` 可以包含 `Primitive` 对象或其他 `Composite` 对象。
+
+### 2.原型模式
+
+原型模式（Prototype Pattern）是一种创建型设计模式，它允许一个对象再创建另一个可定制的对象，而无需知道如何创建的细节。这种模式在对象的创建成本较高时非常有用，因为它避免了直接使用构造函数或工厂方法创建新对象的开销。
+
+原型模式的主要目的是通过复制现有对象来创建新对象，而不是通过实例化类。
+
+原型模式通常包含以下几个角色：
+
+- **原型（Prototype）**：定义一个用于创建对象的接口，通常包含一个克隆自身的方法。
+- **具体原型（Concrete Prototype）**：实现原型接口，提供克隆自身的实现。
+- **客户端（Client）**：让一个原型对象克隆自身以创建一个新的对象。
+
+**实现方法**
+
+- **克隆方法（Clone Method）**：原型对象提供一个方法来创建并返回自己的副本。这个方法可以是浅拷贝或深拷贝，具体取决于实现。
+- **注册原型（Register Prototype）**：在系统中，原型对象被注册或存储，以便客户端可以访问并请求克隆。
+- **创建对象（Create Object）**：客户端请求原型对象克隆自身，而不是通过构造函数创建新对象。
+
+例：
+
+父类：
+
+```c++
+#include <iostream.h>
+
+enum imageType {
+    LSAT, SPOT
+};
+
+class Image {
+public:
+    virtual void draw() = 0;
+    static Image *findAndClone(imageType);
+
+protected:
+    virtual imageType returnType() = 0;
+    virtual Image *clone() = 0;
+
+    // As each subclass of Image is declared, it registers its prototype
+    static void addPrototype(Image *image) {
+        _prototypes[_nextSlot++] = image;
+    }
+
+private:
+    // addPrototype() saves each registered prototype here
+    static Image *_prototypes[10];
+    static int _nextSlot;
+};
+
+Image *Image::_prototypes[];
+int Image::_nextSlot;
+// Client calls this public static member function when it needs an instance
+// of an Image subclass
+Image *Image::findAndClone(imageType type) {
+    for (int i = 0; i < _nextSlot; i++) {
+        if (_prototypes[i]->returnType() == type)
+            return _prototypes[i]->clone();
+    }
+    // 如果没有找到匹配的原型，可能需要返回 nullptr 或者抛出异常
+    return nullptr;
+}
+```
+
+子类：
+
+```c++
+enum imageType {
+    LSAT, SPOT
+};
+
+class LandSatImage : public Image {
+public:
+    imageType returnType() {
+        return LSAT;
+    }
+    void draw() {
+        cout << "LandSatImage::draw() " << _id << endl;
+    }
+    Image *clone() {
+        return new LandSatImage(*this);
+    }
+protected:
+    LandSatImage(int dummy) {
+        _id = _count++;
+    }
+private:
+    static LandSatImage landSatImage; // 用于注册子类的原型
+    LandSatImage() {
+        addPrototype(this);
+    }
+    int _id;
+    static int _count;
+};
+
+// 初始化静态成员变量
+LandSatImage LandSatImage::landSatImage;
+int LandSatImage::_count = 1;
+```
+
