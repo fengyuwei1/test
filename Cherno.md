@@ -4188,3 +4188,88 @@ public:
 - **代码安全性**：使用常函数可以防止意外修改对象的成员，提高代码的安全性。
 - **提高可读性**：让代码更加清晰，因为 `const` 表明了该函数的意图（不会修改对象）。
 - **便于优化**：编译器可以对 `const` 函数进行更多的优化。
+
+## 87.动态多态和静态多态
+
+让我总结一下这两种多态的典型使用场景：
+
+**1. 动态多态（运行时多态）的场景：**
+```cpp
+// 场景1：设计基类接口，派生类实现不同行为
+class Shape {
+    public:
+        virtual double getArea() = 0;
+};
+
+class Circle : public Shape {
+    double getArea() override { return 3.14 * r * r; }
+};
+
+class Rectangle : public Shape {
+    double getArea() override { return width * height; }
+};
+
+// 场景2：插件系统或框架扩展
+class Plugin {
+    public:
+        virtual void execute() = 0;
+};
+
+// 场景3：抽象工厂模式
+class AbstractFactory {
+    public:
+        virtual Product* createProduct() = 0;
+};
+```
+
+**2. 静态多态（编译时多态）的场景：**
+```cpp
+// 场景1：不同参数类型的操作
+class Calculator {
+    int add(int a, int b) { return a + b; }
+    double add(double a, double b) { return a + b; }
+    string add(string a, string b) { return a + b; }
+};
+
+// 场景2：同类型不同参数数量
+void print(string msg) { cout << msg; }
+void print(string msg, int count) {
+    for(int i = 0; i < count; i++) cout << msg;
+}
+
+// 场景3：模板编程
+template<typename T>
+T max(T a, T b) {
+    return (a > b) ? a : b;
+}
+```
+
+选择使用哪种多态的考虑因素：
+
+1. 动态多态适合：
+- 需要在运行时切换行为
+- 设计框架或接口时
+- 需要处理未知的派生类
+- 插件系统开发
+
+2. 静态多态适合：
+- 编译时就能确定类型
+- 性能要求高（避免虚函数调用开销）
+- 处理不同类型参数的相似操作
+- 泛型编程场景
+
+一个具体的例子是游戏引擎中的渲染系统：
+```cpp
+// 动态多态：不同类型物体的渲染
+class GameObject {
+    public:
+        virtual void render() = 0;
+};
+
+// 静态多态：不同参数的渲染函数
+class Renderer {
+    void render(Model& model);
+    void render(Sprite& sprite);
+    void render(Text& text);
+};
+```
