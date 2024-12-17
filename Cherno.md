@@ -900,6 +900,39 @@ mutable的两种用途：1.与const结合使用，2.在lambda表达式中使用
 
 mutable的意思是可改变的，可以把const转换为变量。
 
+mutable 关键字只能用在以下场景：
+
+类的成员变量声明中
+
+lambda 表达式中
+
+不能用 mutable 来改变一个已经声明为 const 的变量。一旦变量被声明为 const，它的常量性质就不能被改变。
+
+这里是正确的使用示例：
+
+```c++
+*// 在类中正确使用 mutable*
+
+class Example {
+
+  mutable int a = 10; *// 正确：在声明时使用 mutable*
+
+  const int b = 20;  *// 这个就是普通的常量成员*
+
+};
+
+*// 在 lambda 中正确使用 mutable*
+
+int x = 10;
+
+auto lambda = [*x*]() mutable {
+
+  x++; *// 正确：因为 lambda 声明为 mutable*
+
+  return x;
+};
+```
+
 实例：
 
 ```c++
@@ -997,7 +1030,6 @@ int z;
 如果x大于y 则是true，将x赋值给z；
 如果x不大于y 则是false，将y赋值给z；
 z = (x > y) ? x : y;
-System.out.println("x = " + x);
 
 实例：
 
@@ -1099,7 +1131,8 @@ public:
 };
 int main()
 {
-	Entity a("cherno");//隐式转换
+	Entity a("cherno");
+    //隐式转换
 	//Entity a = "cherno";
 	Entity b = Entity(22);//隐式转换
 	std:: cin.get();
@@ -1244,6 +1277,118 @@ int main()
 		entity->Print();
 	}
 	std::cin.get();
+}
+```
+
+智能指针是 C++ 中用于管理动态分配内存的工具，它通过封装原始指针来提供自动的内存管理，减少了内存泄漏和悬空指针的问题。智能指针通过 **RAII**（资源获取即初始化）机制管理资源的生命周期，确保资源在适当的时机被释放。C++ 标准库提供了几种类型的智能指针，包括 `std::unique_ptr`、`std::shared_ptr` 和 `std::weak_ptr`，每种智能指针都有其特定的用途和特点。
+
+### 1. **`std::unique_ptr`** - 独占式智能指针
+
+`std::unique_ptr` 是一种 **独占式** 智能指针，表示唯一拥有某个动态分配的对象。它保证一个对象在任何时候只能有一个 `unique_ptr` 指向它。
+
+- **特点**：
+  - `unique_ptr` 不允许复制，只能移动。使用 `std::move()` 可以将所有权转移给另一个 `unique_ptr`。
+  - 一旦 `unique_ptr` 超出作用域，它会自动销毁它所管理的对象，调用 `delete` 来释放内存。
+  - 它不允许共享所有权，也不能被复制。
+- **使用场景**：适用于不需要共享所有权的场景。`unique_ptr` 是非常高效的智能指针，应该首选用于独占式管理动态内存。
+
+```cpp
+#include <iostream>
+#include <memory>
+
+class MyClass {
+public:
+    void greet() { std::cout << "Hello, World!" << std::endl; }
+};
+
+int main() {
+    // 创建一个 unique_ptr 管理 MyClass 对象
+    std::unique_ptr<MyClass> ptr = std::make_unique<MyClass>();
+    ptr->greet();  // 使用 unique_ptr 调用成员函数
+
+    // 通过 std::move 转移所有权
+    std::unique_ptr<MyClass> ptr2 = std::move(ptr);
+
+    // ptr 现在为空，不能再使用
+    if (!ptr) {
+        std::cout << "ptr is now empty." << std::endl;
+    }
+}
+```
+
+### 2. **`std::shared_ptr`** - 共享式智能指针
+
+`std::shared_ptr` 是一种 **共享式** 智能指针，允许多个指针共享同一个对象。它通过引用计数来管理对象的生命周期，当最后一个指向对象的 `shared_ptr` 被销毁时，才会自动释放对象。
+
+- **特点**：
+  - 使用引用计数来跟踪指向对象的 `shared_ptr` 数量。
+  - 允许多个 `shared_ptr` 拥有同一个对象。
+  - 当最后一个 `shared_ptr` 超出作用域时，自动销毁对象并释放内存。
+  - 可以通过 `std::make_shared` 来创建 `shared_ptr`，这是一个推荐的做法，因为它可以提高效率。
+  - 如果不正确使用，可能会导致 **循环引用**（例如 `shared_ptr` 互相引用），从而引发内存泄漏。
+- **使用场景**：适用于多个部分需要共享对象所有权的场景，如观察者模式或需要多个所有者管理同一资源的场合。
+
+```cpp
+#include <iostream>
+#include <memory>
+
+class MyClass {
+public:
+    void greet() { std::cout << "Hello, Shared World!" << std::endl; }
+};
+
+int main() {
+    // 创建一个 shared_ptr 管理 MyClass 对象
+    std::shared_ptr<MyClass> ptr1 = std::make_shared<MyClass>();
+    ptr1->greet();
+
+    // 创建另一个 shared_ptr，共享相同的 MyClass 对象
+    std::shared_ptr<MyClass> ptr2 = ptr1;
+
+    std::cout << "Reference count: " << ptr1.use_count() << std::endl;  // 输出引用计数
+
+    // ptr1 和 ptr2 都指向同一对象，当它们都超出作用域时，对象会被销毁
+}
+```
+
+### 3. **`std::weak_ptr`** - 弱引用智能指针
+
+`std::weak_ptr` 是一种 **弱引用** 智能指针，它不会影响对象的引用计数。它主要用于解决 `shared_ptr` 引用计数的 **循环引用** 问题。
+
+- **特点**：
+  - `weak_ptr` 不会增加对象的引用计数。
+  - 通过 `weak_ptr` 获取对象时，必须先将其转换为 `shared_ptr`，如果对象已经被销毁，转换将失败。
+  - 主要用于防止 `shared_ptr` 的循环引用，尤其在缓存、观察者模式等场景中非常有用。
+- **使用场景**：用于缓存、观察者模式等场景中需要保持对对象的弱引用，但不希望影响对象的生命周期管理。
+
+```cpp
+#include <iostream>
+#include <memory>
+
+class MyClass {
+public:
+    void greet() { std::cout << "Hello, Weak World!" << std::endl; }
+};
+
+int main() {
+    std::shared_ptr<MyClass> ptr1 = std::make_shared<MyClass>();
+    std::weak_ptr<MyClass> weakPtr = ptr1;  // weak_ptr 不增加引用计数
+
+    std::cout << "Reference count: " << ptr1.use_count() << std::endl;
+
+    // 将 weak_ptr 转换为 shared_ptr
+    if (auto ptr2 = weakPtr.lock()) {
+        ptr2->greet();  // 如果对象没有被销毁，可以使用
+    } else {
+        std::cout << "Object has been destroyed." << std::endl;
+    }
+
+    ptr1.reset();  // 释放 shared_ptr
+    if (auto ptr2 = weakPtr.lock()) {
+        std::cout << "Object is still alive." << std::endl;
+    } else {
+        std::cout << "Object has been destroyed." << std::endl;  // 对象已经被销毁
+    }
 }
 ```
 
