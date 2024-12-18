@@ -1316,6 +1316,30 @@ int main() {
 }
 ```
 
+使用方法：
+
+```c++
+// 创建
+auto ptr = std::make_unique<MyClass>(args...);  // 推荐
+std::unique_ptr<MyClass> ptr(new MyClass());    // 替代方式
+
+// 访问
+ptr->method();     // 通过箭头操作符
+(*ptr).method();   // 通过解引用
+
+// 检查
+if (ptr) { ... }   // 检查是否为空
+ptr.get();         // 获取原始指针
+
+// 所有权转移
+auto ptr2 = std::move(ptr);  // ptr 变为 nullptr
+
+// 释放控制
+ptr.reset();              // 释放当前对象
+ptr.reset(new MyClass);   // 释放当前对象并接管新对象
+ptr.release();            // 释放所有权但不删除对
+```
+
 ### 2. **`std::shared_ptr`** - 共享式智能指针
 
 `std::shared_ptr` 是一种 **共享式** 智能指针，允许多个指针共享同一个对象。它通过引用计数来管理对象的生命周期，当最后一个指向对象的 `shared_ptr` 被销毁时，才会自动释放对象。
