@@ -1682,6 +1682,8 @@ int main()
 
 C++11 引入了 `std::tuple`，它允许你将多个返回值打包在一起。
 
+`std::tuple`是一个可以存储多个不同类型元素的模板类。它是C++11引入的一个非常有用的工具，可以把多个值组合成单个对象。
+
 实例：
 
 ```c++
@@ -1699,9 +1701,80 @@ int main() {
 }
 ```
 
+我来详细介绍`std::tuple`。
+
+`std::tuple`是一个可以存储多个不同类型元素的模板类。它是C++11引入的一个非常有用的工具，可以把多个值组合成单个对象。
+
+让我创建一个示例代码来展示`std::tuple`的基本用法：
+
+```cpp
+#include <iostream>
+#include <tuple>
+#include <string>
+
+void tupleDemo() {
+    // 创建tuple
+    std::tuple<int, std::string, double> data(42, "Hello", 3.14);
+    
+    // 获取元素
+    std::cout << "First element: " << std::get<0>(data) << std::endl;     // 42
+    std::cout << "Second element: " << std::get<1>(data) << std::endl;    // Hello
+    std::cout << "Third element: " << std::get<2>(data) << std::endl;     // 3.14
+    
+    // 修改元素
+    std::get<1>(data) = "World";
+    
+    // 使用std::make_tuple创建
+    auto t2 = std::make_tuple(123, "test", 5.5);
+    
+    // 解构（C++17特性）
+    auto [num, str, val] = t2;
+    
+    // 获取tuple大小
+    std::cout << "Tuple size: " << std::tuple_size<decltype(data)>::value << std::endl;
+}
+```
+
+主要特点和用法：
+
+1.**创建tuple**:
+
+```cpp
+// 方式1：直接构造
+std::tuple<int, std::string, double> t1(1, "hello", 3.14);
+
+// 方式2：使用make_tuple
+auto t2 = std::make_tuple(1, "hello", 3.14);
+```
+
+2.**访问元素**:
+
+```cpp
+// 使用std::get<N>
+int first = std::get<0>(t1);
+std::string second = std::get<1>(t1);
+```
+
+3.**结构化绑定** (C++17):
+
+```cpp
+auto [x, y, z] = t1;  // 自动解构到单独的变量
+```
+
+4.**使用tie进行解包**:
+
+```cpp
+int a;
+std::string b;
+double c;
+std::tie(a, b, c) = t1;  // 解构到已存在的变量
+```
+
 ### 2.使用 `std::pair`
 
 如果只需要返回两个值，可以使用 `std::pair`。
+
+`std::pair`是一个可以存储两个不同类型元素的模板类，它是`tuple`的简化版本，专门用于存储两个值的场景。
 
 实例：
 
@@ -1718,6 +1791,75 @@ int main() {
     std::cout << "int: " << i << ", double: " << d << std::endl;
     return 0;
 }
+```
+
+让我详细介绍`std::pair`。
+
+`std::pair`是一个可以存储两个不同类型元素的模板类，它是`tuple`的简化版本，专门用于存储两个值的场景。
+
+让我通过代码来展示`std::pair`的基本用法：
+
+```cpp
+#include <iostream>
+#include <utility>   // std::pair
+#include <string>
+
+void pairDemo() {
+    // 1. 创建pair
+    std::pair<int, std::string> p1(1, "one");
+    
+    // 2. 使用make_pair
+    auto p2 = std::make_pair(2, "two");
+    
+    // 3. 访问元素
+    std::cout << "First: " << p1.first << std::endl;    // 使用.first
+    std::cout << "Second: " << p1.second << std::endl;  // 使用.second
+    
+    // 4. 修改元素
+    p1.first = 10;
+    p1.second = "ten";
+    
+    // 5. 结构化绑定(C++17)
+    auto [num, str] = p1;
+}
+```
+
+主要用法：
+
+1.**创建pair**:
+
+```cpp
+// 方式1：直接构造
+std::pair<int, std::string> p1(1, "one");
+
+// 方式2：使用make_pair
+auto p2 = std::make_pair(2, "two");
+
+// 方式3：花括号初始化
+std::pair<int, std::string> p3{3, "three"};
+```
+
+2.**访问和修改元素**:
+
+```cpp
+// 使用.first和.second
+int f = p1.first;
+std::string s = p1.second;
+
+p1.first = 10;
+p1.second = "ten";
+```
+
+3.**解包方式**:
+
+```cpp
+// 使用结构化绑定(C++17)
+auto [x, y] = p1;
+
+// 使用std::tie
+int a;
+std::string b;
+std::tie(a, b) = p1;
 ```
 
 ### 3.通过指针或引用参数
