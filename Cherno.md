@@ -2114,6 +2114,76 @@ int main()
 }
 ```
 
+#### 1. **基本用法**
+
+- 变量声明auto用于自动推导变量类型：
+
+  ```cpp
+  auto x = 42;      // x 推导为 int
+  auto y = 3.14;    // y 推导为 double
+  auto str = "Hello";  // str 推导为 const char*
+  ```
+
+#### 2. **使用场景**
+
+- **简化复杂类型声明** 使用 `auto` 来简化复杂类型声明，例如迭代器类型：
+
+  ```cpp
+  std::vector<int>::iterator it = vec.begin();
+  // 使用 auto
+  auto it = vec.begin();  // 编译器自动推导类型
+  ```
+
+- **函数返回类型推导** `auto` 用于推导函数的返回类型，特别是依赖于模板或复杂类型时：
+
+  ```cpp
+  auto add(int a, int b) {
+      return a + b;  // 自动推导为 int
+  }
+  ```
+
+- **范围基于 for 循环** 使用 `auto` 在范围基于 `for` 循环中自动推导容器元素类型：
+
+  ```cpp
+  std::vector<int> vec = {1, 2, 3, 4};
+  for (auto i : vec) {
+      std::cout << i << std::endl;  // i 推导为 int
+  }
+  ```
+
+#### 3. **注意事项**
+
+- **必须有初始值** `auto` 需要初始化表达式来推导出类型，不能没有初始化：
+
+  ```cpp
+  auto x;  // 错误：缺少初始化
+  ```
+
+- **常量与引用** `auto` 默认推导为值类型。如果需要引用或常量，必须显式加上 `&` 或 `const`：
+
+  ```cpp
+  int x = 42;
+  auto& ref = x;  // ref 是 int& 类型
+  const auto& cref = x;  // cref 是 const int& 类型
+  ```
+
+- **函数返回值** 在 C++14 和 C++17 中，可以使用 `auto` 来推导函数的返回类型：
+
+  ```cpp
+  auto func() {
+      return 42;  // 推导为 int
+  }
+  ```
+
+- **与模板结合使用** `auto` 可以与模板结合，推导返回值类型：
+
+  ```cpp
+  template <typename T>
+  auto multiply(T a, T b) {
+      return a * b;  // 根据类型推导返回值类型
+  }
+  ```
+
 ## 52.C++的静态数组(std::array)
 
 这个库用来处理静态数组。
