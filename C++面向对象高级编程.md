@@ -47,6 +47,20 @@ complex<double> c1(2.5,1.5);
 
 函数若在class Body内定义完成，便自动定义为inline函数
 
+内联函数的主要作用是通过在调用点直接插入函数体的代码，来消除函数调用的开销，提高程序的执行效率。它的工作原理类似于宏展开，但比宏更安全和灵活。
+
+主要优点：
+
+1. 减少函数调用开销 - 避免了压栈、跳转和返回等操作
+2. 编译器优化 - 内联展开后的代码可以被编译器更好地优化
+3. 对于短小的函数特别有效 - 如访问器(getter/setter)等
+
+需要注意的限制：
+
+1. 函数体不能太大 - 过大的函数内联可能导致代码膨胀
+2. 递归函数不能内联 - 递归调用的展开是无限的
+3. 虚函数通常不会被内联 - 因为要等到运行时才能确定调用哪个版本
+
 例如：
 
 ```c++
@@ -800,7 +814,6 @@ eg1:
 ```c++
 class Complex { ... };
 ...
-
 {
     Complex* p = new Complex;
     ...
@@ -1124,12 +1137,12 @@ extern _IO_ostream_withassign cout;
 - **`ostream& operator<<(unsigned char c)` 和 `ostream& operator<<(signed char c)`**
   - 用于输出无符号和有符号字符。
   - 它们通过强制类型转换为 `char`，然后调用 `ostream& operator<<(char c)` 方法完成输出。
-- **`ostream& operator<<(const char \*s);`**
+- **`ostream& operator<<(const char *s);`**
   - 用于输出 C 风格的字符串（以 `'\0'` 结尾的字符数组）。
-- **`ostream& operator<<(const unsigned char \*s)` 和 `ostream& operator<<(const signed char \*s)`**
+- **`ostream& operator<<(const unsigned char *s)` 和 `ostream& operator<<(const signed char *s)`**
   - 用于输出指向无符号或有符号字符的字符串指针。
   - 它们将字符串指针转换为 `const char*`，然后调用 `ostream& operator<<(const char *s)`。
-- **`ostream& operator<<(const void \*p);`**
+- **`ostream& operator<<(const void *p);`**
   - 用于输出指针类型。通常将指针的值打印为地址（十六进制格式）。
 - **`ostream& operator<<(int n);`、`ostream& operator<<(unsigned int n);`**
   - 用于输出整型数据。
